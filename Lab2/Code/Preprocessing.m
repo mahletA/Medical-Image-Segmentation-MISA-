@@ -1,0 +1,4 @@
+%% PREPROCESSING %%
+% REMOVAL OF SKULL USING GROUND TRUTH MASK %
+
+T1 = load_untouch_nii('')
