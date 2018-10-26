@@ -10,6 +10,7 @@
 %         lambda - max value of .25 for stability
 %         option - 1 Perona Malik diffusion equation No 1
 %                  2 Perona Malik diffusion equation No 2
+%                  3 Isotropic smoothing
 %
 % Returns:
 %         diff   - diffused image.
@@ -24,6 +25,7 @@
 %
 % Diffusion equation 1 favours high contrast edges over low contrast ones.
 % Diffusion equation 2 favours wide regions over smaller ones.
+% Option 3 for isotropic smoothing
 
 % Reference: 
 % P. Perona and J. Malik. 
@@ -65,16 +67,22 @@ for i = 1:niter
   deltaW = diffl(2:rows+1,1:cols)   - diff;
 
   % Conduction
-  if option == 1
+  if option == 1 % Leclerc
     cN = exp(-(deltaN/kappa).^2);
     cS = exp(-(deltaS/kappa).^2);
     cE = exp(-(deltaE/kappa).^2);
     cW = exp(-(deltaW/kappa).^2);
-  elseif option == 2
+  elseif option == 2 % Lorentz
     cN = 1./(1 + (deltaN/kappa).^2);
     cS = 1./(1 + (deltaS/kappa).^2);
     cE = 1./(1 + (deltaE/kappa).^2);
     cW = 1./(1 + (deltaW/kappa).^2);
+  elseif option == 3 % isotropic smoothing
+    cN = 0.1;
+    cS = 0.1;
+    cE = 0.1;
+    cW = 0.1;
+      
   end
 
   diff = diff + lambda*(cN.*deltaN + cS.*deltaS + cE.*deltaE + cW.*deltaW);
