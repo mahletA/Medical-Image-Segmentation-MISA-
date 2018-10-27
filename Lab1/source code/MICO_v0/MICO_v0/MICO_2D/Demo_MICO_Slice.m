@@ -10,10 +10,8 @@ clc;close all;clear all;
 iterNum = 200;
 N_region=3;  q=1;
 
-% Img=imread('brainweb64.tif');
-% Img = double(Img(:,:,1));
-% imshow(Img,[]);
 
+% Load 3D data and select only one slice
 img = load_nii('D:\MAIA_Masters\Semester3_Spain\MISA\l1_preprocessing\Lab1\braindata\t1_icbm_normal_1mm_pn0_rf20.nii');
 shape = size(img.img);
 slice = 90;
