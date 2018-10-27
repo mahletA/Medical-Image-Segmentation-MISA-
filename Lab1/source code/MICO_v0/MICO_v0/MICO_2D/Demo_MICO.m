@@ -7,15 +7,12 @@
 % URL:  http://imagecomputing.org/~cmli/
 
 clc;close all;clear all;
-iterNum = 10;
+iterNum = 200;
 N_region=3;  q=1;
-%Img=imread('brainweb64.tif');
 
-%Img=imread('brainweb97.tif');
-img = load_nii('D:\MAIA_Masters\Semester3_Spain\MISA\l1_preprocessing\braindata\t1_icbm_normal_1mm_pn0_rf0.nii');
+img = load_nii('D:\MAIA_Masters\Semester3_Spain\MISA\l1_preprocessing\Lab1\braindata\t1_icbm_normal_1mm_pn0_rf20.nii');
 shape = size(img.img);
 
-%Img=imread('mprage171.tif');
 for slice = 1:shape(3)
 Img = double(img.img(:,:,slice));
 if mean2(Img) == 0
@@ -101,7 +98,7 @@ figure;
 %subplot(144),imshow(uint8(img_bc.*ROI),[]),title('bias corrected')
 
 img.img(:,:,slice) = img_bc(:,:);
-save_nii(img, './rf0_slices/pn0_rf0_bc.nii');
+save_nii(img, './Results/pn0_rf20_bc.nii');
 end
 end
 

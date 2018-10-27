@@ -8,13 +8,13 @@
 
 clc;close all;clear all;
 iterNum = 200;
-N_region=3;  q=3;
+N_region=3;  q=1;
 
 % Img=imread('brainweb64.tif');
 % Img = double(Img(:,:,1));
 % imshow(Img,[]);
 
-img = load_nii('D:\MAIA_Masters\Semester3_Spain\MISA\l1_preprocessing\braindata\t1_icbm_normal_1mm_pn0_rf40.nii');
+img = load_nii('D:\MAIA_Masters\Semester3_Spain\MISA\l1_preprocessing\Lab1\braindata\t1_icbm_normal_1mm_pn0_rf20.nii');
 shape = size(img.img);
 slice = 90;
 Img = double(img.img(:,:,slice))';
@@ -98,5 +98,8 @@ subplot(142),imshow(seg.*ROI,[]),title('Segmentation result');
 subplot(143),imshow(b.*ROI,[]),title('bias field')
 subplot(144),imshow(uint8(img_bc.*ROI),[]),title('bias corrected')
 
-imwrite(uint8(img_bc.*ROI), './Results/noise0_bias40_q3.png');
+img_bc = (img_bc - min(img_bc(:)))/(max(img_bc(:))- min(img_bc(:)));
+imwrite(img_bc.*ROI, './Results/noise0_bias20_q1.png');
 
+% seg = (seg - min(seg(:)))/(max(seg(:)) - min(seg(:)));
+% imwrite(seg.*ROI, './Results/seg_bias40_q5.png');
