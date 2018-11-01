@@ -1,12 +1,13 @@
+
 %% Loading data 
 
 clear;
 clc;
 profile on;
-T1 = load_untouch_nii('../Data/4/preprocessedT1.nii');
-T2 = load_untouch_nii('../Data/4/preprocessedFlair.nii');
+T1 = load_untouch_nii('../Data/1/T1.nii');
+T2 = load_untouch_nii('../Data/1/T2_Flair.nii');
 
-ground_truth = load_untouch_nii('../Data/5/LabelsForTesting.nii');
+ground_truth = load_untouch_nii('../Data/1/LabelsForTesting.nii');
 
 x1 = [];
 x2 = [];
@@ -37,26 +38,29 @@ X = horzcat(x1, x2);
 
 
 %% Initialize 
-k=3; % for 3 regions, i.e. CSF, GM, WM
-[alpha, Mu, Sigma1] = Initialize (X,k);
+K=3; % for 3 regions, i.e. CSF, GM, WM
+[alpha, Mu, Sigma1] = Initialize (X,K);
 
 Sigma = [];
-for i=1:k
+for i=1:K
     Sigma = vertcat(Sigma,Sigma1); % Initialize all sigmas the same way (vertically stack)
 end
 
 %% Epectation
-[W] = E_Step(X, alpha, Mu, Sigma);
+%[W] = E_Step(X, alpha, Mu, Sigma);
 
 %% Maximization
 logL = log_likelihood(X,alpha,Mu,Sigma);
 iteration = 0; 
 
-sprintf('Iteration ------- Log Likelihood diff.')
-diff = 1000;
 
 N = size(X,1);
 f = size(X,2);
+
+sprintf('Iteration ------- Log Likelihood diff.')
+diff = 1000;
+logL = log_likelihood(X,alpha,Mu,Sigma);
+
 while diff > 0.1
     iteration = iteration + 1;
     
@@ -65,8 +69,28 @@ while diff > 0.1
     %logL_new = log_likelihood(X,alpha_new,Mu_new,Sigma_new);
     
     
-    %% MAXIMIZATION %%
-    K = size(W,2);
+   
+    %% EXPECTATION %%
+
+    W = zeros(N,K);
+
+    for k =1:K
+        if k == 1
+            W(:,k) = mvnpdf(X ,Mu(k,:), Sigma(1:f,:))*alpha(k);
+        else
+            W(:,k)= mvnpdf(X, Mu(k,:), Sigma((f*(k-1))+1: f*k,:))*alpha(k);
+        end
+    end
+
+    for i=1:N
+        W(i,:) = W(i,:)/ sum(W(i,:));
+    end 
+    
+    
+
+    
+     %% MAXIMIZATION %%
+    
     Net = sum(W);
 
     % UPDATE alpha
@@ -88,7 +112,7 @@ while diff > 0.1
 %         end
 
 % THIS LINE IS CAUING PROBLEMS!!!!!!!
-         temp =  (W(:,k) .* X - Mu_new(k,:))' * (W(:,k) .* X - Mu_new(k,:));
+         temp =  (W(:,k) .* (X - Mu_new(k,:)))' * (X - Mu_new(k,:));
          
          if k ==1
             Sigma_new(1:f,:) =  temp/Net(k); 
@@ -97,22 +121,6 @@ while diff > 0.1
          end
     end
     %Sigma_new
-    %% EXPECTATION %%
-
-    W = zeros(N,K);
-
-    for k =1:K
-        if k == 1
-            W(:,k) = mvnpdf(X ,Mu_new(k,:), Sigma_new(1:f,:))*alpha_new(k);
-        else
-            W(:,k)= mvnpdf(X, Mu_new(k,:), Sigma_new((f*(k-1))+1: f*k,:))*alpha_new(k);
-        end
-    end
-
-    for i=1:N
-        W(i,:) = W(i,:)/ sum(W(i,:));
-    end 
-    
     
     %% Log likelihood
     temp = zeros(N,1);
@@ -127,7 +135,12 @@ while diff > 0.1
     logL_new = sum(log(temp));
     
     diff = abs(logL-logL_new);
+    
     logL = logL_new;
+    Sigma = Sigma_new;
+    alpha = alpha_new;
+    Mu = Mu_new;
+    
     sprintf('%i    -------    %0.4f',iteration,diff)
     
     
@@ -154,8 +167,12 @@ end
 final_seg = reshape(final_seg, size(T1.img));
 
 seg = final_seg(:,:,25)';
-seg2 = seg; seg2(seg ==3) =2; seg2(seg == 2) = 3;
+% Tweak segmentation labels to match ground truth
+seg2 = seg; seg2(seg ==3) =2; seg2(seg == 2) = 1; seg2(seg ==1) = 3;
 truth = double(ground_truth.img(:,:,25))';
 figure;imshow(truth,[])
+figure; imshow(seg2,[])
 figure;imshow(seg,[])
+
+dice(truth, seg2)
 
