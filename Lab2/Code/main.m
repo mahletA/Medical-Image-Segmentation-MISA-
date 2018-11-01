@@ -4,10 +4,10 @@
 clear;
 clc;
 profile on;
-T1 = load_untouch_nii('../Data/1/T1.nii');
-T2 = load_untouch_nii('../Data/1/T2_Flair.nii');
+T1 = load_untouch_nii('../Data/5/T1.nii');
+T2 = load_untouch_nii('../Data/5/T2_Flair.nii');
 
-ground_truth = load_untouch_nii('../Data/1/LabelsForTesting.nii');
+ground_truth = load_untouch_nii('../Data/5/LabelsForTesting.nii');
 
 x1 = [];
 x2 = [];
@@ -33,7 +33,6 @@ x2 = (x2_original .* mask) + mask2;
 x1(x1 == -50 ) = [];
 x2(x2 == -50 ) = [];
 
-sprintf('About to initialize ...');
 X = horzcat(x1, x2);
 
 
@@ -46,13 +45,7 @@ for i=1:K
     Sigma = vertcat(Sigma,Sigma1); % Initialize all sigmas the same way (vertically stack)
 end
 
-%% Epectation
-%[W] = E_Step(X, alpha, Mu, Sigma);
-
-%% Maximization
-logL = log_likelihood(X,alpha,Mu,Sigma);
 iteration = 0; 
-
 
 N = size(X,1);
 f = size(X,2);
@@ -69,7 +62,6 @@ while diff > 0.1
     %logL_new = log_likelihood(X,alpha_new,Mu_new,Sigma_new);
     
     
-   
     %% EXPECTATION %%
 
     W = zeros(N,K);
@@ -105,13 +97,7 @@ while diff > 0.1
     % UPDATE SIGMA
     Sigma_new = zeros(K*f, f);
     for k = 1:K
-
-%        temp = zeros(1,f);
-%         for i= 1:N
-%             temp = temp + W(i,k) .* ((X(i,:) - Mu_new(k,:))' * (X(i,:) - Mu_new(k,:)));
-%         end
-
-% THIS LINE IS CAUING PROBLEMS!!!!!!!
+        
          temp =  (W(:,k) .* (X - Mu_new(k,:)))' * (X - Mu_new(k,:));
          
          if k ==1
@@ -136,6 +122,7 @@ while diff > 0.1
     
     diff = abs(logL-logL_new);
     
+    % Update variables
     logL = logL_new;
     Sigma = Sigma_new;
     alpha = alpha_new;
@@ -167,8 +154,11 @@ end
 final_seg = reshape(final_seg, size(T1.img));
 
 seg = final_seg(:,:,25)';
+
 % Tweak segmentation labels to match ground truth
 seg2 = seg; seg2(seg ==3) =2; seg2(seg == 2) = 1; seg2(seg ==1) = 3;
+
+
 truth = double(ground_truth.img(:,:,25))';
 figure;imshow(truth,[])
 figure; imshow(seg2,[])
