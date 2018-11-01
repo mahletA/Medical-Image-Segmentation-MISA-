@@ -63,6 +63,8 @@ while diff > 0.1
     %[alpha_new, Mu_new, Sigma_new] = M_Step (X, W);
     %[W] = E_Step(X, alpha_new, Mu_new, Sigma_new);
     %logL_new = log_likelihood(X,alpha_new,Mu_new,Sigma_new);
+    
+    
     %% MAXIMIZATION %%
     K = size(W,2);
     Net = sum(W);
@@ -84,7 +86,10 @@ while diff > 0.1
 %         for i= 1:N
 %             temp = temp + W(i,k) .* ((X(i,:) - Mu_new(k,:))' * (X(i,:) - Mu_new(k,:)));
 %         end
-         temp =  W(i,k) .* ((X(:,:) - Mu_new(k,:))' * (X(:,:) - Mu_new(k,:)));
+
+% THIS LINE IS CAUING PROBLEMS!!!!!!!
+         temp =  (W(:,k) .* X - Mu_new(k,:))' * (W(:,k) .* X - Mu_new(k,:));
+         
          if k ==1
             Sigma_new(1:f,:) =  temp/Net(k); 
          else
@@ -100,7 +105,6 @@ while diff > 0.1
         if k == 1
             W(:,k) = mvnpdf(X ,Mu_new(k,:), Sigma_new(1:f,:))*alpha_new(k);
         else
-            
             W(:,k)= mvnpdf(X, Mu_new(k,:), Sigma_new((f*(k-1))+1: f*k,:))*alpha_new(k);
         end
     end
@@ -129,7 +133,7 @@ while diff > 0.1
     
 end
 
-
+%% TESTING
 % Reconstruct segmented results
 [~, I]= (max(W'));
 final_seg = zeros(size(x1_original));
@@ -153,5 +157,5 @@ seg = final_seg(:,:,25)';
 seg2 = seg; seg2(seg ==3) =2; seg2(seg == 2) = 3;
 truth = double(ground_truth.img(:,:,25))';
 figure;imshow(truth,[])
-figure;imshow(seg2,[])
+figure;imshow(seg,[])
 
