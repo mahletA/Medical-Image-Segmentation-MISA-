@@ -1,20 +1,13 @@
 
 %% Loading data 
 
-clear;
+clear all;
 clc;
 profile on;
+T1 = load_untouch_nii('../Data/5/T1.nii');
+T2 = load_untouch_nii('../Data/5/T2_Flair.nii');
 
-% For recording CPU time of the algorithm
-tic;
-initime = cputime;
-time1   = clock;
-
-
-T1 = load_untouch_nii('../Data/2/T1.nii');
-T2 = load_untouch_nii('../Data/2/T2_Flair.nii');
-segmented = T1;
-ground_truth = load_untouch_nii('../Data/2/LabelsForTesting.nii');
+ground_truth = load_untouch_nii('../Data/5/LabelsForTesting.nii');
 
 x1 = [];
 x2 = [];
@@ -40,7 +33,7 @@ x2 = (x2_original .* mask) + mask2;
 x1(x1 == -50 ) = [];
 x2(x2 == -50 ) = [];
 
-X = horzcat(x1, x2*0.2);
+X = horzcat(x1, x2);
 
 
 %% Initialize 
@@ -140,6 +133,7 @@ while diff > 0.1
     
 end
 
+%% TESTING
 % Reconstruct segmented results
 [~, I]= (max(W'));
 final_seg = zeros(size(x1_original));
@@ -155,49 +149,44 @@ for i=1:N_orig
         index = index + 1;
     end
 end
+
+%test the dice of a slice with ground truth
 final_seg = reshape(final_seg, size(T1.img));
 
-fintime = cputime;
-elapsed = toc;
-time2   = clock;
+seg = final_seg(:,:,25)';
 
-fprintf('TIC TOC: %g\n', elapsed);
-fprintf('CPUTIME: %g\n', fintime - initime);
-fprintf('CLOCK:   %g\n', etime(time2, time1));
+% Tweak segmentation labels to match ground truth
+seg2 = seg; seg2(seg == 2) = 3; seg2(seg == 3) = 2;
+%seg2(seg ==3) =1; seg2(seg == 2) = 3; seg2(seg ==1) = 2;
 
-%% Testing ..
-%test the dice of a slice with ground truth
-% 
-% seg = final_seg(:,:,40)';
-% 
-% % Tweak segmentation labels to match ground truth
-% seg2 = seg; seg2(seg ==3) =1; seg2(seg == 2) = 3; seg2(seg ==1) = 2;
-% truth = double(ground_truth.img(:,:,40))';
-% 
-% dice_ave = zeros(3,1);
-% for i=1:48
-%     truth = double(ground_truth.img(:,:,i))';
-%     seg = final_seg(:,:,i)';
-%     seg2 = seg; seg2(seg ==3) =1; seg2(seg == 2) = 3; seg2(seg ==1) = 2;
-% 
-%     dice_ave(1) = dice_ave(1)+ dice(truth ==1, seg2==1);
-%     dice_ave(2) = dice_ave(2)+ dice(truth ==2, seg2==2);
-%     dice_ave(3) = dice_ave(3)+ dice(truth ==3, seg2==3);
-%     if isnan(dice_ave(3))
-%         dice_ave(3) = 0;
-%     end
-%     final_seg(:,:,i) = seg2';
-% end
-% 
-% dice_ave = dice_ave/48
-% % save segmented 3D volume
-% for i=1:48
-%     T1.img(:,:,i) = final_seg(:,:,i); 
-% end
-% save_untouch_nii(T1,'../Results/5.nii');
-% figure;imshow(truth,[])
-% figure; imshow(seg2,[])
-% figure;imshow(seg,[])
+truth = double(ground_truth.img(:,:,25))';
+% T1 = load_untouch_nii('../Data/5/preprocessedT1.nii');
+% T2 = load_untouch_nii('../Data/5/preprocessedFlair.nii');
+% t1_im = T1.img(:,:,25)';
+% t2_im = T2.img(:,:,25)';
+figure;imshow(truth,[])
+figure; imshow(seg2,[])
+figure;imshow(seg,[])
+%figure; imshow(t1_im,[])
+%figure; imshow(t2_im,[])
 
-%dice(truth, seg2)
+
+dice(truth, seg2)
+
+
+%% Dice for the whole volume
+dice_coeff = [];
+for slice=1:size(final_seg,3)
+    seg = final_seg(:,:,slice)';
+
+    % Tweak segmentation labels to match ground truth
+    seg2 = seg; seg2(seg == 2) = 3; seg2(seg == 3) = 2;
+    truth = double(ground_truth.img(:,:,slice))';
+    if size(dice(truth, seg2),1) == 3
+        dice_coeff = horzcat(dice_coeff,dice(truth, seg2));
+    end
+    
+
+end
+mean_dice = mean(dice_coeff,2)
 
